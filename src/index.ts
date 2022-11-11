@@ -1,8 +1,10 @@
 import { list, getCredits, generate } from "./api";
-import { lyrics } from "./const/lyrics/riders-on-the-storm";
-import { downloadImagesFromAPI } from "./utils";
+import allLyrics from "./const/lyrics/riders-on-the-storm";
+import { downloadImagesFromAPI, getUniqueLyrics } from "./utils";
 
 const creditsLeft = async () => (await getCredits()).aggregate_credits;
+
+const lyrics = getUniqueLyrics(allLyrics);
 
 (async () => {
 	// Get the last 50 runs
@@ -26,16 +28,25 @@ const creditsLeft = async () => (await getCredits()).aggregate_credits;
 	);
 
 	// Check how many credits are left
-	const credits = await creditsLeft();
+	let credits = await creditsLeft();
 
 	// If we have more than 30 credits, generate a new image from an unused lyric
-	if (credits > 30) {
-		await generate(lyricsNotYetGenerated[0]);
+	for (const lyric of lyricsNotYetGenerated) {
+		if (credits > 30) {
+			await generate(lyric);
+			console.log(`Generated images for ${lyric}`);
+		} else {
+			console.log(`We have ${credits} credits left`);
+		}
 	}
 
 	// We wait 10 seconds to make sure the image is generated
+	console.log(`Waiting for images to be generated...`);
 	await new Promise((resolve) => setTimeout(resolve, 10000));
+	console.log(`Done waiting`);
 
 	// We then download all of the images we have generated in the API
+	console.log(`Downloading images...`);
 	await downloadImagesFromAPI(runs);
+	console.log(`Downloaded images`);
 })();
